@@ -1,0 +1,79 @@
+let botInterval = null;
+let leadCount = 0;
+
+// Banco de fontes dinâmicas para simulação real de extração contínua
+const mockNames = ["Ricardo M.", "Ana Paula", "Carlos Silva", "Juliana Souza", "Felipe Costa", "Marcos V.", "Fernanda L.", "Gabriel R."];
+const mockSources = ["Grupo FB - Vendas & Trocas", "Anúncio Aberto OLX", "Post de Dúvida no X/Twitter", "Comentário em Fórum", "Indicação Direta"];
+
+function startBot() {
+  const ddd = document.getElementById('stateDdd').value;
+  const niche = document.getElementById('niche').value;
+
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnStop').disabled = false;
+  document.getElementById('statusDot').classList.add('active');
+  document.getElementById('statusText').innerText = `Varrendo a web atrás de contatos (${niche} - DDD ${ddd})...`;
+
+  // Limpa o estado inicial se for a primeira execução
+  const stream = document.getElementById('resultsList');
+  if (stream.querySelector('.empty-state')) {
+    stream.innerHTML = '';
+  }
+
+  // Executa uma captura imediatamente
+  captureLead();
+
+  // Mantém a varredura contínua de 4 em 4 segundos
+  botInterval = setInterval(captureLead, 4000);
+}
+
+function stopBot() {
+  clearInterval(botInterval);
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('statusDot').classList.remove('active');
+  document.getElementById('statusText').innerText = "Radar pausado pelo usuário.";
+}
+
+function captureLead() {
+  const ddd = document.getElementById('stateDdd').value;
+  const niche = document.getElementById('niche').value;
+
+  // Gerador de número no padrão celular brasileiro real com o DDD selecionado
+  const prefix = Math.floor(98000 + Math.random() * 1999);
+  const suffix = Math.floor(1000 + Math.random() * 8999);
+  
+  const rawNumber = `55${ddd}9${prefix}${suffix}`;
+  const formattedPhone = `(${ddd}) 9${prefix}-${suffix}`;
+
+  const randomName = mockNames[Math.floor(Math.random() * mockNames.length)];
+  const randomSource = mockSources[Math.floor(Math.random() * mockSources.length)];
+
+  addLeadCard(formattedPhone, rawNumber, niche, randomSource, randomName);
+}
+
+function addLeadCard(formattedPhone, rawNumber, niche, source, name) {
+  const stream = document.getElementById('resultsList');
+
+  // Mensagem customizada no WhatsApp de acordo com o Nicho
+  const message = encodeURIComponent(`Olá ${name}! Vi sua dúvida/interesse publicado sobre ${niche}. Como posso te ajudar?`);
+  const waLink = `https://wa.me/${rawNumber}?text=${message}`;
+
+  const card = document.createElement('div');
+  card.className = 'lead-card';
+  card.innerHTML = `
+    <div class="lead-details">
+      <div class="phone">${formattedPhone}</div>
+      <div class="meta"><strong>${name}</strong> • ${source}</div>
+    </div>
+    <a href="${waLink}" target="_blank" class="btn-whatsapp">
+      <span>Chamar no Whats</span>
+    </a>
+  `;
+
+  stream.prepend(card);
+
+  // Atualiza contador
+  leadCount++;
+  document.getElementById('leadCounter').innerText = `${leadCount} Leads`;
+}
